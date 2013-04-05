@@ -1,0 +1,1 @@
+Simple weather application for android. Fetches weather information from weatherunderground and displays it for the user using phones gps location.
