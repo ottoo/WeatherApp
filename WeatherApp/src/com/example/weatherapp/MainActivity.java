@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
 	private double latitude = 0;
 	/** Longitude **/
 	private double longitude = 0;
+	/** Gps enabled or not **/
 	private boolean isGpsEnabled;
 
 	/**
@@ -71,16 +72,7 @@ public class MainActivity extends Activity {
 
 		initWeatherApp();
 	}
-	
-	/**
-	 * Called when program is resumed.
-	 */
-	@Override
-	protected void onResume() {
-		super.onResume();
-		initWeatherApp();
-	}
-	
+			
 	/**
 	 * Initializes the application.
 	 */
@@ -160,9 +152,12 @@ public class MainActivity extends Activity {
 		getGpsState();
 
 		if (isGpsEnabled) {
-			setupLocationService();
+			showProgressDialog();
 			locationManager.requestLocationUpdates(
 					LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+		} else {
+			showToast();
+			openSettings();
 		}
 	}
 
