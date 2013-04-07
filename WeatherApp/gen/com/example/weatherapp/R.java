@@ -25,6 +25,7 @@ public final class R {
         public static final int sun_icon=0x7f020001;
     }
     public static final class id {
+        public static final int button1=0x7f080003;
         public static final int imageView1=0x7f080000;
         public static final int tView1=0x7f080001;
         public static final int tView2=0x7f080002;

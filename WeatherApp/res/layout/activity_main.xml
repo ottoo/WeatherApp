@@ -39,4 +39,14 @@
         android:gravity="center"
         android:textSize="20sp" />
 
+    <Button
+        android:id="@+id/button1"
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignRight="@+id/imageView1"
+        android:text="Update"
+        android:onClick="updateLocation" />
+
 </RelativeLayout>

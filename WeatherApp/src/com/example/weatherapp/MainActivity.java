@@ -13,18 +13,21 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
-import android.view.Window;
-import android.view.WindowManager;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * Weather application. Gets your location and shows the weather information.
@@ -38,16 +41,19 @@ public class MainActivity extends Activity {
 	private TextView textView, textView2;
 	/** ImageView for weather icon **/
 	private ImageView imageView;
+	/** Update button **/
+	private Button updateBtn;
 	/** Location Manager **/
 	private LocationManager locationManager;
 	/** Location Listener **/
 	private LocationListener locationListener;
 	/** ProgressDialog **/
 	private ProgressDialog pDialog1;
-	/**  Latitude **/
+	/** Latitude **/
 	private double latitude = 0;
 	/** Longitude **/
 	private double longitude = 0;
+	private boolean isGpsEnabled;
 
 	/**
 	 * Called when activity is created.
@@ -55,16 +61,40 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		setContentView(R.layout.activity_main);
-		
+
 		textView = (TextView) findViewById(R.id.tView1);
 		textView2 = (TextView) findViewById(R.id.tView2);
 		imageView = (ImageView) findViewById(R.id.imageView1);
+		updateBtn = (Button) findViewById(R.id.button1);
 
-		setupLocationService();
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,
-				0, locationListener);
+		initWeatherApp();
+	}
+	
+	/**
+	 * Called when program is resumed.
+	 */
+	@Override
+	protected void onResume() {
+		super.onResume();
+		initWeatherApp();
+	}
+	
+	/**
+	 * Initializes the application.
+	 */
+	public void initWeatherApp() {
+		getGpsState();
+
+		if (isGpsEnabled) {
+			setupLocationService();
+			locationManager.requestLocationUpdates(
+					LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+		} else {
+			showToast();
+			openSettings();
+		}
 	}
 
 	/**
@@ -76,20 +106,76 @@ public class MainActivity extends Activity {
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
-	
+
 	/**
-	 * Initializes the location listener and shows a progress dialog.
+	 * Checks if gps is enabled or not.
 	 */
-	public void setupLocationService() {
-				
+	public void getGpsState() {
+		String provider = Settings.Secure.getString(getContentResolver(),
+				Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+
+		if (provider.contains("gps")) {
+			isGpsEnabled = true;
+		} else {
+			isGpsEnabled = false;
+		}
+	}
+
+	/**
+	 * Opens settings to enable gps.
+	 */
+	public void openSettings() {
+		Intent intent = new Intent(
+				android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+		startActivity(intent);
+	}
+
+	/**
+	 * Show progress dialog while getting a location.
+	 */
+	public void showProgressDialog() {
 		pDialog1 = new ProgressDialog(MainActivity.this);
 		pDialog1.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 		pDialog1.setMessage("Getting location");
 		pDialog1.show();
-		
+	}
+
+	/**
+	 * Shows a toast when gps needs to be enabled.
+	 */
+	public void showToast() {
+		Toast toast = Toast.makeText(this, "GPS needs to be enabled",
+				Toast.LENGTH_SHORT);
+		toast.show();
+	}
+
+	/**
+	 * Updates users location.
+	 * 
+	 * @param v
+	 *            View
+	 */
+	public void updateLocation(View v) {
+
+		getGpsState();
+
+		if (isGpsEnabled) {
+			setupLocationService();
+			locationManager.requestLocationUpdates(
+					LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+		}
+	}
+
+	/**
+	 * Initializes the location listener and shows a progress dialog.
+	 */
+	public void setupLocationService() {
+
+		showProgressDialog();
+
 		locationManager = (LocationManager) this
 				.getSystemService(Context.LOCATION_SERVICE);
-						
+
 		locationListener = new LocationListener() {
 
 			@Override
@@ -109,10 +195,10 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onLocationChanged(Location loc) {
-												
+
 				latitude = loc.getLatitude();
 				longitude = loc.getLongitude();
-								
+
 				Log.d("BOOT", latitude + " + " + longitude);
 
 				try {
@@ -123,9 +209,9 @@ public class MainActivity extends Activity {
 				} catch (MalformedURLException e) {
 					e.printStackTrace();
 				}
-				
+
 				locationManager.removeUpdates(locationListener);
-								
+
 			}
 		};
 	}
@@ -157,15 +243,15 @@ public class MainActivity extends Activity {
 		}
 
 	}
-	 
+
 	/**
 	 * Gets the weather information from json.
 	 */
 	private class getURLContent extends AsyncTask<URL, Integer, String> {
-								
+
 		@Override
 		protected String doInBackground(URL... urls) {
-			
+
 			HttpURLConnection urlConnection = null;
 			String line = "";
 			int character;
@@ -177,7 +263,7 @@ public class MainActivity extends Activity {
 
 				while ((character = in.read()) != -1) {
 					line += (char) character;
-					
+
 				}
 
 			} catch (IOException e) {
@@ -185,12 +271,12 @@ public class MainActivity extends Activity {
 			} finally {
 				urlConnection.disconnect();
 			}
-				         
-	        return line;
+
+			return line;
 		}
-		
+
 		protected void onProgressUpdate(Integer... progress) {
-			
+
 		}
 
 		@Override
@@ -198,7 +284,7 @@ public class MainActivity extends Activity {
 			if (pDialog1.isShowing()) {
 				pDialog1.dismiss();
 			}
-			
+
 			try {
 				JSONObject jObject = new JSONObject(result);
 				JSONObject cObject = jObject
@@ -214,9 +300,6 @@ public class MainActivity extends Activity {
 				textView2.setText(weather + ", " + temp_c + "c");
 
 				new getWeatherIcon().execute(new URL(imageUrl));
-								
-				pDialog1.dismiss();
-				
 
 			} catch (JSONException e) {
 				e.printStackTrace();
